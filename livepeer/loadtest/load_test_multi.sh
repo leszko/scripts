@@ -30,47 +30,47 @@ case "$REGION" in
  *) echo "wrong region '${REGION}'"; exit 1;;
 esac
 
-# echo "Starting ${N} instances in the region '${REGION}'"
-# for N in $(seq 1 ${INSTANCES_PER_REGION}); do
-#   INSTANCE_NAME="${INSTANCE_NAME_PREFIX}-${REGION}-${N}"
+echo "Starting ${N} instances in the region '${REGION}'"
+for N in $(seq 1 ${INSTANCES_PER_REGION}); do
+  INSTANCE_NAME="${INSTANCE_NAME_PREFIX}-${REGION}-${N}"
 
-#     gcloud compute instances create-with-container ${INSTANCE_NAME} \
-#       --project=${PROJECT} \
-#       --zone=${ZONE} \
-#       --machine-type=${MACHINE_TYPE} \
-#       --network-interface=network-tier=PREMIUM,subnet=default \
-#       --maintenance-policy=MIGRATE \
-#       --provisioning-model=STANDARD \
-#       --service-account=211814034878-compute@developer.gserviceaccount.com \
-#       --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
-#       --image=projects/cos-cloud/global/images/cos-stable-85-13310-1041-9 \
-#       --boot-disk-size=100GB \
-#       --boot-disk-type=pd-ssd \
-#       --boot-disk-device-name=load-test-50-global \
-#       --container-image=${CONTAINER_IMAGE} \
-#       --container-restart-policy=never \
-#       --container-command=/root/loadtester \
-#       --container-arg=-file=https://eric-test-livepeer.s3.amazonaws.com/bbbx3_720.mp4 \
-#       --container-arg=-api-token=${LIVEPEER_STUDIO_API_TOKEN} \
-#       --container-arg=-test-dur=${DURATION} \
-#       --container-arg=-sim=${SIM_STREAM_PER_INSTANCE} \
-#       --container-arg=-v=4 \
-#       --container-arg=-api-server=${API_SERVER} \
-#       --container-arg=-wait-for-target=${DURATION} \
-#       --container-arg=-rtmp-template=${RTMP_TEMPLATE} \
-#       --container-arg=-hls-template=${HLS_TEMPLATE} \
-#       --no-shielded-secure-boot \
-#       --shielded-vtpm \
-#       --shielded-integrity-monitoring \
-#       --labels=container-vm=cos-stable-85-13310-1041-9
-# done
+    gcloud compute instances create-with-container ${INSTANCE_NAME} \
+      --project=${PROJECT} \
+      --zone=${ZONE} \
+      --machine-type=${MACHINE_TYPE} \
+      --network-interface=network-tier=PREMIUM,subnet=default \
+      --maintenance-policy=MIGRATE \
+      --provisioning-model=STANDARD \
+      --service-account=211814034878-compute@developer.gserviceaccount.com \
+      --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+      --image=projects/cos-cloud/global/images/cos-stable-85-13310-1041-9 \
+      --boot-disk-size=100GB \
+      --boot-disk-type=pd-ssd \
+      --boot-disk-device-name=load-test-50-global \
+      --container-image=${CONTAINER_IMAGE} \
+      --container-restart-policy=never \
+      --container-command=/root/loadtester \
+      --container-arg=-file=https://eric-test-livepeer.s3.amazonaws.com/bbbx3_720.mp4 \
+      --container-arg=-api-token=${LIVEPEER_STUDIO_API_TOKEN} \
+      --container-arg=-test-dur=${DURATION} \
+      --container-arg=-sim=${SIM_STREAM_PER_INSTANCE} \
+      --container-arg=-v=4 \
+      --container-arg=-api-server=${API_SERVER} \
+      --container-arg=-wait-for-target=${DURATION} \
+      --container-arg=-rtmp-template=${RTMP_TEMPLATE} \
+      --container-arg=-hls-template=${HLS_TEMPLATE} \
+      --no-shielded-secure-boot \
+      --shielded-vtpm \
+      --shielded-integrity-monitoring \
+      --labels=container-vm=cos-stable-85-13310-1041-9
+done
 
-# echo "Waiting ${SLEEP_TIME}s to complete load test in the region '${REGION}'"
-# sleep ${SLEEP_TIME}
+echo "Waiting ${SLEEP_TIME}s to complete load test in the region '${REGION}'"
+sleep ${SLEEP_TIME}
 
 echo "Fetching logs and deleting instances in the region '${REGION}'"
 for N in $(seq 1 ${INSTANCES_PER_REGION}); do
   INSTANCE_NAME="${INSTANCE_NAME_PREFIX}-${REGION}-${N}"
-  # gcloud compute ssh --zone ${ZONE} ${INSTANCE_NAME} --project ${PROJECT} --command="docker logs \$(docker ps -a -q --filter ancestor=${CONTAINER_IMAGE})" >& ${REGION}-${N}-logs.txt
+  gcloud compute ssh --zone ${ZONE} ${INSTANCE_NAME} --project ${PROJECT} --command="docker logs \$(docker ps -a -q --filter ancestor=${CONTAINER_IMAGE})" >& ${REGION}-${N}-logs.txt
   gcloud compute instances delete ${INSTANCE_NAME} --zone ${ZONE} --quiet
 done
