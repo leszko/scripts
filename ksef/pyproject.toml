@@ -1,0 +1,9 @@
+[project]
+name = "invoice-generator"
+version = "0.1.0"
+description = "Invoice PDF generator from KSeF XML"
+requires-python = ">=3.8"
+dependencies = [
+    "fpdf2>=2.7.0",
+    "python-dotenv>=1.0.0",
+]
