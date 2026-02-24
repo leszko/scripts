@@ -28,7 +28,7 @@ NOTIFY_EMAIL = os.environ["NOTIFY_EMAIL"]
 
 def load_forwarded() -> set[str]:
     if SENT_FILE.exists():
-        return set(json.loads(SENT_FILE.read_text()))
+        return set(str(x) for x in json.loads(SENT_FILE.read_text()))
     return set()
 
 
@@ -62,38 +62,55 @@ def main() -> None:
     forwarded = load_forwarded()
     new_count = 0
 
+    # Fetch all pages so we can sort by unread first, then newest-by-date.
+    # Otherwise we'd forward API order (newest-by-date) and skip "new" unread
+    # messages that appear first in the Librus UI.
+    all_messages: list = []
     page = 1
+    page_size = 50  # API returns this many per page; last page may be shorter
     while True:
+        print(f"Fetching page {page}...", file=sys.stderr)
+        sys.stderr.flush()
         messages = get_received(client, page=page)
         if not messages:
             break
-
-        all_known = True
-        for msg in messages:
-            if msg.href in forwarded:
-                continue
-
-            all_known = False
-            content = message_content(client, msg.href)
-
-            if args.dry_run:
-                print(f"[DRY RUN] Would forward: {content.title} (from {content.author}, {content.date})")
-            else:
-                body = (
-                    f"From: {content.author}\n"
-                    f"Date: {content.date}\n"
-                    f"---\n\n"
-                    f"{content.content}"
-                )
-                send_email(content.title, body)
-                print(f"Forwarded: {content.title} (from {content.author})")
-
-            forwarded.add(msg.href)
-            new_count += 1
-
-        if all_known:
+        all_messages.extend(messages)
+        if len(messages) < page_size:
             break
         page += 1
+        if page > 100:
+            break  # safety
+    print(f"Loaded {len(all_messages)} messages from {page} page(s).", file=sys.stderr)
+
+    # Unread first (what user sees as "new" in the inbox), then newest by date.
+    def sort_key(msg):
+        return (msg.unread, msg.date or "")
+
+    all_messages.sort(key=sort_key, reverse=True)  # unread=True first, then newest date
+
+    for i, msg in enumerate(all_messages):
+        href = str(msg.href) if msg.href is not None else ""
+        if not href or href in forwarded:
+            continue
+
+        print(f"Processing message {i + 1}/{len(all_messages)} (href={href})...", file=sys.stderr)
+        sys.stderr.flush()
+        content = message_content(client, msg.href)
+
+        if args.dry_run:
+            print(f"[DRY RUN] Would forward: {content.title} (from {content.author}, {content.date})")
+        else:
+            body = (
+                f"From: {content.author}\n"
+                f"Date: {content.date}\n"
+                f"---\n\n"
+                f"{content.content}"
+            )
+            send_email(content.title, body)
+            print(f"Forwarded: {content.title} (from {content.author})")
+
+        forwarded.add(href)
+        new_count += 1
 
     save_forwarded(forwarded)
 
