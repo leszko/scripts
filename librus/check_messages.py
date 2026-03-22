@@ -7,6 +7,7 @@ synergia.librus.pl scraping, which returns stale/mismatched messages.
 
 import argparse
 import json
+import re
 import smtplib
 import sys
 from base64 import b64decode
@@ -94,6 +95,22 @@ def decode_b64(text: str) -> str:
         return text
 
 
+def format_content(raw: str) -> str:
+    """Clean up message content: strip XML wrappers, resolve links, fix spacing."""
+    text = raw
+    # Strip XML wrapper tags
+    text = re.sub(r"</?Message>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"</?Content>", "", text, flags=re.IGNORECASE)
+    text = text.replace("<![CDATA[", "").replace("]]>", "")
+    # Convert <a href="...">text</a> to just the href URL
+    text = re.sub(r'<a\b[^>]*href="([^"]*)"[^>]*>[^<]*</a>', r"\1", text, flags=re.IGNORECASE)
+    # Remove any remaining HTML tags
+    text = re.sub(r"<[^>]+>", "", text)
+    # Collapse runs of 3+ newlines into 2 (keep paragraph breaks, remove extra spacing)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Forward Librus messages to email")
     parser.add_argument(
@@ -150,7 +167,7 @@ def main() -> None:
         resp.raise_for_status()
         full_msg = resp.json()["data"]
 
-        content = decode_b64(full_msg.get("Message", ""))
+        content = format_content(decode_b64(full_msg.get("Message", "")))
         title = full_msg.get("topic", topic)
         author = full_msg.get("senderName", sender)
         date = full_msg.get("sendDate", send_date)
