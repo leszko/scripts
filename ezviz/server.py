@@ -36,7 +36,7 @@ def _ezviz_login() -> tuple[str, str]:
         f"{API_BASE}/v3/users/login/v5",
         data={"account": EZVIZ_USERNAME, "password": pwd_hash, "featureCode": FEATURE_CODE},
         headers={"clientType": "1"},
-        timeout=10,
+        timeout=30,
     )
     resp.raise_for_status()
     body = resp.json()
@@ -67,7 +67,7 @@ def _unlock(lock_no: int, label: str, session_id: str, user_id: str) -> dict:
                     "userName": user_id,
                 }
             },
-            timeout=10,
+            timeout=30,
         )
         resp.raise_for_status()
         meta = resp.json().get("meta", {})
