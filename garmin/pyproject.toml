@@ -1,0 +1,11 @@
+[project]
+name = "garmin-zwo-converter"
+version = "0.1.0"
+description = "Convert Zwift ZWO workout files and upload to Garmin Connect"
+requires-python = ">=3.12"
+dependencies = [
+    "garminconnect[workout]>=0.3.0",
+]
+
+[project.scripts]
+zwo2garmin = "zwo2garmin:main"

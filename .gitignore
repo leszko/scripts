@@ -1,7 +1,8 @@
-# Environment variables
+# Environment variables and tokens
 .env
 .env.local
 .env.*.local
+.garmin_tokens.json
 
 # Python
 __pycache__/
